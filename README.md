@@ -1,10 +1,11 @@
 # SmartAquaculture-Aquafix
-
 AquaFix: IoT-Based Smart Aquaculture System
+
 📌 Overview
 AquaFix is an IoT-based smart aquaculture system designed to address critical challenges in Ghana's fish farming industry, such as high fingerling mortality rates, poor water quality management, and inefficient feeding practices. By leveraging real-time monitoring, automated alerts, and remote control of farm equipment, AquaFix ensures optimal pond conditions, reduces economic losses, and promotes sustainable aquaculture.
 
 🎯 Key Features
+
 ✅ Real-Time Water Quality Monitoring
 
 Tracks pH, temperature, dissolved oxygen (DO), ammonia, salinity, and turbidity.
