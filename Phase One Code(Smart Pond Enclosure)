@@ -4,11 +4,11 @@ This module integrates a rain sensor, stepper motor, and LED indicators to autom
 How It Works
 Rain Detection:
 
-The rain sensor detects precipitation and sends a signal to the ESP32.
+The rain sensor detects precipitation and sends a signal to the Arduino.
 
 Automatic Pond Cover Activation:
 
-The ESP32 triggers a stepper motor (via a driver) to close the pond cover, shielding fish from excess rainwater (which can alter water quality).
+The Arduino triggers a stepper motor (via a driver) to close the pond cover, shielding fish from excess rainwater (which can alter water quality).
 
 Visual Indicators:
 
