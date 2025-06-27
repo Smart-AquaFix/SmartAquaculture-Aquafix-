@@ -1,0 +1,119 @@
+#Rain-Triggered Pond Cover System
+This module integrates a rain sensor, stepper motor, and LED indicators to automatically protect fish ponds from adverse weather.
+
+How It Works
+Rain Detection:
+
+The rain sensor detects precipitation and sends a signal to the ESP32.
+
+Automatic Pond Cover Activation:
+
+The ESP32 triggers a stepper motor (via a driver) to close the pond cover, shielding fish from excess rainwater (which can alter water quality).
+
+Visual Indicators:
+
+Green LED: Pond cover is open (normal conditions).
+
+Red LED: Pond cover is closed (rain detected).
+
+*Codes are below*
+
+
+#include <Stepper.h>
+
+// Define pins
+const int rainSensorPin = A0;  // Raindrop sensor analog pin
+const int IN1 = 8;             // ULN2003 IN1 pin
+const int IN2 = 9;             // ULN2003 IN2 pin
+const int IN3 = 10;            // ULN2003 IN3 pin
+const int IN4 = 11;            // ULN2003 IN4 pin
+const int greenLedPin = 7;     // Green LED (ON for dry, OFF for rain)
+const int redLedPin = 6;       // Red LED (ON when motor moving)
+
+// Define threshold for rain detection
+const int rainThreshold = 500; // Values < 500 indicate rain, >= 500 indicate dry
+
+// Define stepper motor parameters for 28BYJ-48
+const int stepsPerRevolution = 2048; // Steps per revolution (32 steps x 64 gear ratio)
+const int stepsFor180Degrees = stepsPerRevolution / 2; // 1024 steps for 180 degrees
+const int motorSpeed = 10;     // Reduced speed for stability
+const int motorDelay = 2000;   // 2 seconds delay after movement
+
+// Variables for rain sensor state and debouncing
+int rainValue = 0;
+int lastRainState = -1;        // Initialize to -1 to force initial update
+unsigned long lastDebounceTime = 0;
+const unsigned long debounceDelay = 50;
+
+// Initialize stepper motor
+Stepper myStepper(stepsPerRevolution, IN1, IN3, IN2, IN4);
+
+void setup() {
+  // Initialize pins
+  pinMode(greenLedPin, OUTPUT);
+  pinMode(redLedPin, OUTPUT);
+  myStepper.setSpeed(motorSpeed);
+  
+  // Initial LED state: Green OFF, Red OFF (wait for first sensor reading)
+  digitalWrite(greenLedPin, LOW);
+  digitalWrite(redLedPin, LOW);
+  
+  // Start serial communication for debugging
+  Serial.begin(9600);
+  Serial.println("Setup complete. Monitoring rain sensor...");
+}
+
+void loop() {
+  // Read rain sensor value first
+  int reading = analogRead(rainSensorPin);
+  int currentRainState = (reading < rainThreshold) ? 1 : 0;
+  
+  // Debug prints
+  Serial.print("Rain Sensor Value: ");
+  Serial.println(reading);
+  Serial.print("Current State: ");
+  Serial.println(currentRainState);
+  Serial.print("Last State: ");
+  Serial.println(lastRainState);
+  
+  // Check if state has changed
+  if (currentRainState != lastRainState) {
+    lastDebounceTime = millis();
+    Serial.println("State change detected, starting debounce timer");
+  }
+  
+  // If enough time has passed, confirm the reading
+  if ((millis() - lastDebounceTime) > debounceDelay) {
+    if (currentRainState != lastRainState) {
+      rainValue = reading;
+      lastRainState = currentRainState;
+      Serial.println("Stable state confirmed");
+      
+      if (currentRainState == 1) {
+        Serial.println("Rain detected! Stepper moving 180 degrees clockwise");
+        digitalWrite(redLedPin, HIGH);    // Red LED ON (motor moving)
+        digitalWrite(greenLedPin, LOW);   // Green LED OFF (rain)
+        myStepper.step(stepsFor180Degrees);
+        Serial.println("Motor movement complete");
+        digitalWrite(redLedPin, LOW);     // Red LED OFF
+        digitalWrite(greenLedPin, LOW);   // Green LED remains OFF (rain)
+        delay(motorDelay);
+      } else if (currentRainState == 0 && reading >= rainThreshold) {
+        Serial.println("Dry condition detected. Stepper moving 180 degrees counterclockwise");
+        digitalWrite(redLedPin, HIGH);    // Red LED ON (motor moving)
+        digitalWrite(greenLedPin, LOW);   // Green LED OFF (during movement)
+        myStepper.step(-stepsFor180Degrees);
+        Serial.println("Motor movement complete");
+        digitalWrite(redLedPin, LOW);     // Red LED OFF
+        digitalWrite(greenLedPin, HIGH);  // Green LED ON (dry)
+        delay(motorDelay);
+      }
+    }
+  }
+  
+  // Update green LED based on rain state
+  digitalWrite(greenLedPin, (currentRainState == 0) ? HIGH : LOW);
+  digitalWrite(redLedPin, LOW);  // Ensure red LED is OFF when motor not moving
+  
+  delay(10);
+}
